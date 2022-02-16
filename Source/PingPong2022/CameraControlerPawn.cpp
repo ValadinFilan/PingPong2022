@@ -27,6 +27,7 @@ void ACameraControlerPawn::BeginPlay()
 	if (World) {
 		ControlableRocket = Cast<APlayerRocket>(World->SpawnActor(Rocket, &NewLocation, &Rotation));
 		ControlableRocket->SetController(this);
+		ControlableRocket->SetForce(RocketForce);
 		if(Target) ControlableRocket->Target = Target;
 	}
 }

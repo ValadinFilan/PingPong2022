@@ -27,6 +27,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	AActor* Target;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RocketForce = 1;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -50,7 +53,6 @@ public:
 	void SetRotationPoint(FVector Point);
 	FVector GetRocketVelocityVector();
 	FVector GetRocketVelocityVector(FVector Point);
-	float RocketForce = 1;
 	void SetController(APawn* Controller) {
 		this->RocketController = Controller;
 	}

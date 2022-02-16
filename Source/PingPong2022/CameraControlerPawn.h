@@ -28,6 +28,9 @@ public:
 	bool MouseMode = true;
 
 	UPROPERTY(EditAnywhere)
+	float RocketForce = 1;
+
+	UPROPERTY(EditAnywhere)
 	FVector HittingPoint = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere)
