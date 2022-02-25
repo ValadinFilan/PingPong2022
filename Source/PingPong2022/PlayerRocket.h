@@ -66,4 +66,7 @@ public:
 	}
 	UFUNCTION(BlueprintCallable)
 	void SendControllerHittingResult(int32 Result);
+
+
+	void RotateAR(FRotator Rotation);
 };

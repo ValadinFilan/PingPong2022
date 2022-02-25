@@ -3,7 +3,15 @@
 #include "CameraControlerPawn.h"
 #include "Engine/World.h"
 #include "AIRocketController.h"
-#include "Components/SceneComponent.h"
+#include "Components/SceneComponent.h"	
+#include "Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h"
+#include "Runtime/Networking/Public/Common/UdpSocketReceiver.h"
+#include "Runtime/Networking/Public/Interfaces/IPv4/IPv4Endpoint.h"
+#include "Async/Async.h"
+#include "SocketSubsystem.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Serialization/JsonSerializer.h"	
+
 
 DEFINE_LOG_CATEGORY_STATIC(LogCameraPawn, All, All)
 
@@ -22,7 +30,7 @@ void ACameraControlerPawn::BeginPlay()
 	Super::BeginPlay();
 	
 	UWorld* World = GetWorld();
-	const FVector NewLocation = GetActorLocation() + (FVector::XAxisVector * 100).RotateAngleAxis(GetActorRotation().GetComponentForAxis(EAxis::Z), FVector::ZAxisVector);
+	const FVector NewLocation = GetActorLocation() + (FVector::XAxisVector * 100).RotateAngleAxis(GetActorRotation().GetComponentForAxis(EAxis::Z), FVector::ZAxisVector) + FVector::ZAxisVector * 50;
 	const FRotator Rotation = GetActorRotation();
 	if (World) {
 		ControlableRocket = Cast<APlayerRocket>(World->SpawnActor(Rocket, &NewLocation, &Rotation));
@@ -30,12 +38,16 @@ void ACameraControlerPawn::BeginPlay()
 		ControlableRocket->SetForce(RocketForce);
 		if(Target) ControlableRocket->Target = Target;
 	}
+	if (!IsAIControllable) {
+		StartReceiveSocket(TEXT("192.168.1.64"), 25565);
+	}
 }
 
 // Called every frame
 void ACameraControlerPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UpdateRocket(&RocketData);
 }
 
 // Called to bind functionality to input
@@ -59,6 +71,12 @@ void ACameraControlerPawn::HitActionUp()
 void ACameraControlerPawn::HitActionDown()
 {
 	ControlableRocket->SetArmRotation(-1);
+}
+
+void ACameraControlerPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	StopReceiveSocket();
+	Super::EndPlay(EndPlayReason);
 }
 
 void ACameraControlerPawn::MoveX(float Amount)
@@ -140,17 +158,17 @@ void ACameraControlerPawn::RotateX(float Amount)
 
 void ACameraControlerPawn::RotateY(float Amount)
 {
-	FRotator XRotation = FRotator(0, 1, 0) * Amount;
+	FRotator YRotation = FRotator(0, 1, 0) * Amount;
 	if (ControlableRocket) {
-		ControlableRocket->Rotate(XRotation);
+		ControlableRocket->Rotate(YRotation);
 	}
 }
 
 void ACameraControlerPawn::RotateZ(float Amount)
 {
-	FRotator XRotation = FRotator(0, 0, 1) * Amount;
+	FRotator ZRotation = FRotator(0, 0, 1) * Amount;
 	if (ControlableRocket) {
-		ControlableRocket->Rotate(XRotation);
+		ControlableRocket->Rotate(ZRotation);
 	}
 }
 
@@ -168,4 +186,92 @@ void ACameraControlerPawn::ReceiveHittingResult(int32 Result)
 		AIController->ReceiveHittingResult(Result);
 	}
 }
+
+bool ACameraControlerPawn::StartReceiveSocket(const FString& InListenIP, const int32 InListenPort)
+{
+	UE_LOG(LogCameraPawn, Display, TEXT("SOCKET STARTED"))
+	FIPv4Address Addr;
+	FIPv4Address::Parse(InListenIP, Addr);
+
+	//Create Socket
+	FIPv4Endpoint Endpoint(Addr, InListenPort);
+
+	ReceiverSocket = FUdpSocketBuilder(TEXT("Rocket socket"))
+		.AsNonBlocking()
+		.AsReusable()
+		.BoundToEndpoint(Endpoint)
+		.WithReceiveBufferSize(2 * 1024 * 1024);
+
+	FTimespan ThreadWaitTime = FTimespan::FromMilliseconds(100);
+	FString ThreadName = FString::Printf(TEXT("UDP RECEIVER-FUDPNative"));
+	UDPReceiver = new FUdpSocketReceiver(ReceiverSocket, ThreadWaitTime, *ThreadName);
+
+	UDPReceiver->OnDataReceived().BindLambda([this](const FArrayReaderPtr& DataPtr, const FIPv4Endpoint& Endpoint)
+		{
+			ReceiveData(DataPtr, Endpoint);
+		});
+	UDPReceiver->Start();
+
+	return true;
+}
+
+void ACameraControlerPawn::ReceiveData(const FArrayReaderPtr& DataPtr, const FIPv4Endpoint& Endpoint)
+{
+	int32 Count = DataPtr->Num();
+	const uint8* In = DataPtr.Get()->GetData();
+	FString Result = "";
+
+	while (Count)
+	{
+		int16 Value = *In;
+		Result += TCHAR(Value);
+		++In;
+		Count--;
+	}
+	TSharedPtr<FJsonObject> MyJson = MakeShareable(new FJsonObject);
+	if (DataPtr.Get()) {
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Result);
+		if (FJsonSerializer::Deserialize(Reader, MyJson)) {
+			//UE_LOG(LogCameraPawn, Display, TEXT("%f, %f, %f"), MyJson->GetNumberField(TEXT("gyro_azimuth")), MyJson->GetNumberField(TEXT("gyro_pitch")), MyJson->GetNumberField(TEXT("gyro_roll")));
+			RocketData.accel_freq = MyJson->GetNumberField(TEXT("accel_freq"));
+			RocketData.accel_x = MyJson->GetNumberField(TEXT("accel_x"));
+			RocketData.accel_y = MyJson->GetNumberField(TEXT("accel_y"));
+			RocketData.accel_z = MyJson->GetNumberField(TEXT("accel_z"));
+			RocketData.calibrate = MyJson->GetNumberField(TEXT("calibrate"));
+			RocketData.gyro_azimuth = MyJson->GetNumberField(TEXT("gyro_azimuth"));
+			RocketData.gyro_freq = MyJson->GetNumberField(TEXT("gyro_freq"));
+			RocketData.gyro_pitch = MyJson->GetNumberField(TEXT("gyro_pitch"));
+			RocketData.gyro_roll = MyJson->GetNumberField(TEXT("gyro_roll"));
+			RocketData.timestamp = MyJson->GetNumberField(TEXT("timestamp"));
+		}
+		else {
+			UE_LOG(LogCameraPawn, Display, TEXT("Can`t serialize"));
+		}
+	}
+}
+
+void ACameraControlerPawn::UpdateRocket(const FSensorData* Data)
+{
+	MouseMode = false;
+	//SetRotation(Data->gyro_roll, Data->gyro_pitch, Data->gyro_azimuth);
+	SetRotation(Data->gyro_roll + 90, -1 * Data->gyro_pitch + 90, -1 * Data->gyro_azimuth);
+	//ControlableRocket->RotateAR(FRotator(Data->gyro_roll + 90, -1 * Data->gyro_pitch + 90, -1 * Data->gyro_azimuth + 90));
+	UE_LOG(LogCameraPawn, Display, TEXT("%f %f %f"), Data->gyro_roll, Data->gyro_pitch, Data->gyro_azimuth);
+	//MoveX(10 * Data->accel_x  / (2 * 24 * 24));
+	//MoveY(10 * Data->accel_y  / (2 * 24 * 24));
+	//MoveZ(10 * Data->accel_z  / (2 * 24 * 24));
+}
+
+void ACameraControlerPawn::StopReceiveSocket()
+{
+	if (ReceiverSocket)
+	{
+		UDPReceiver->Stop();
+		delete UDPReceiver;
+		UDPReceiver = nullptr;
+		ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(ReceiverSocket);
+		ReceiverSocket = nullptr;
+	}
+}
+
 

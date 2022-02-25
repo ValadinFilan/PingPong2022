@@ -62,7 +62,7 @@ void APlayerRocket::Rotate(FRotator DeltaRotation)
 
 void APlayerRocket::SetRotation(FRotator Rotation)
 {
-	SetActorRotation(Rotation * RotationVelocity);
+	SetActorRotation(Rotation);
 }
 
 void APlayerRocket::SetArmRotation(float Degrees)
@@ -92,6 +92,14 @@ void APlayerRocket::SendControllerHittingResult(int32 Result)
 		ACameraControlerPawn* CameraControlerPawn = Cast<ACameraControlerPawn>(RocketController);
 		CameraControlerPawn->ReceiveHittingResult(Result);
 	}
+}
+
+void APlayerRocket::RotateAR(FRotator Rotation)
+{
+	FQuat XRotation = FQuat(1, 0, 0, Rotation.GetComponentForAxis(EAxis::X));
+	FQuat YRotation = FQuat(0, 1, 0, Rotation.GetComponentForAxis(EAxis::Y));
+	FQuat ZRotation = FQuat(0, 0, 1, Rotation.GetComponentForAxis(EAxis::Z));
+	SetActorRotation(FRotator(XRotation * YRotation * ZRotation));
 }
 
 
