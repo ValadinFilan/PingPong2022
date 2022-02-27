@@ -15,20 +15,37 @@ public:
 	// Sets default values for this actor's properties
 	APlayerRocket();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move")
 	float MoveVelocity = 10;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move")
 	float RotationVelocity = 1;
 
+	UPROPERTY(EditAnywhere, Category = "Move")
+	FRotator BaseRotation = FRotator::ZeroRotator;
+
 	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* BaseMesh;;
+	UStaticMeshComponent* BaseMesh;
+
+	UPROPERTY(EditAnywhere, Category = "ARMove")
+	UStaticMeshComponent* MarkX;
+
+	UPROPERTY(EditAnywhere, Category = "ARMove")
+	UStaticMeshComponent* MarkY;
+
+	UPROPERTY(EditAnywhere, Category = "ARMove")
+	UStaticMeshComponent* MarkZ;
+
+	UPROPERTY(EditAnywhere, Category = "Move")
+	FRotator BaseARRotation = FRotator::ZeroRotator;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	AActor* Target;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RocketForce = 1;
+
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -42,6 +59,7 @@ protected:
 	FVector  LastLocation = FVector::ZeroVector;
 	FRotator LastRotation = FRotator::ZeroRotator;
 	APawn* RocketController;
+	bool FirstConnect = true;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -88,7 +88,7 @@ public:
 	void Move(FVector Vector);
 	void MouseMoveX(float Amount);
 	void MouseMoveY(float Amount);
-	void SetRotation(float AmountX, float AmountY, float AmountZ);
+	void SetARRotation(float AmountX, float AmountY, float AmountZ);
 	void SetRotation(FRotator Rotator);
 	void RotateX(float Amount);
 	void RotateY(float Amount);

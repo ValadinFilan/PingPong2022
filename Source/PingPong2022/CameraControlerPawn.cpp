@@ -47,7 +47,7 @@ void ACameraControlerPawn::BeginPlay()
 void ACameraControlerPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UpdateRocket(&RocketData);
+	if(!MouseMode) UpdateRocket(&RocketData);
 }
 
 // Called to bind functionality to input
@@ -133,18 +133,18 @@ void ACameraControlerPawn::MouseMoveY(float Amount)
 	}
 }
 
-void ACameraControlerPawn::SetRotation(float AmountX, float AmountY, float AmountZ)
+void ACameraControlerPawn::SetARRotation(float AmountX, float AmountY, float AmountZ)
 {
 	FRotator Rotation = FRotator(AmountX, AmountY, AmountZ);
 	if (ControlableRocket) {
-		ControlableRocket->SetRotation(GetActorRotation() + Rotation);
+		ControlableRocket->RotateAR(/*GetActorRotation() + */Rotation);
 	}
 }
 
 void ACameraControlerPawn::SetRotation(FRotator Rotator)
 {
 	if (ControlableRocket) {
-		ControlableRocket->SetRotation(GetActorRotation() + Rotator);
+		ControlableRocket->SetRotation(/*GetActorRotation() +*/Rotator);
 	}
 }
 
@@ -243,6 +243,7 @@ void ACameraControlerPawn::ReceiveData(const FArrayReaderPtr& DataPtr, const FIP
 			RocketData.gyro_pitch = MyJson->GetNumberField(TEXT("gyro_pitch"));
 			RocketData.gyro_roll = MyJson->GetNumberField(TEXT("gyro_roll"));
 			RocketData.timestamp = MyJson->GetNumberField(TEXT("timestamp"));
+			MouseMode = false;
 		}
 		else {
 			UE_LOG(LogCameraPawn, Display, TEXT("Can`t serialize"));
@@ -252,14 +253,20 @@ void ACameraControlerPawn::ReceiveData(const FArrayReaderPtr& DataPtr, const FIP
 
 void ACameraControlerPawn::UpdateRocket(const FSensorData* Data)
 {
-	MouseMode = false;
-	//SetRotation(Data->gyro_roll, Data->gyro_pitch, Data->gyro_azimuth);
-	SetRotation(Data->gyro_roll + 90, -1 * Data->gyro_pitch + 90, -1 * Data->gyro_azimuth);
-	//ControlableRocket->RotateAR(FRotator(Data->gyro_roll + 90, -1 * Data->gyro_pitch + 90, -1 * Data->gyro_azimuth + 90));
-	UE_LOG(LogCameraPawn, Display, TEXT("%f %f %f"), Data->gyro_roll, Data->gyro_pitch, Data->gyro_azimuth);
-	//MoveX(10 * Data->accel_x  / (2 * 24 * 24));
-	//MoveY(10 * Data->accel_y  / (2 * 24 * 24));
-	//MoveZ(10 * Data->accel_z  / (2 * 24 * 24));
+	if (!MouseMode) {
+		//SetRotation(-1 * Data->gyro_pitch - 90, 0, 0);
+		//SetRotation(Data->gyro_roll, Data->gyro_azimuth, Data->gyro_pitch);
+		//SetRotation(-1 * Data->gyro_pitch - 90, Data->gyro_azimuth - 90, -1 * Data->gyro_roll);
+		//SetRotation(0, 0, -1 * Data->gyro_roll);
+		//SetRotation(Data->gyro_roll, Data->gyro_pitch, Data->gyro_azimuth);
+		//SetRotation(Data->gyro_roll + 90, -1 * Data->gyro_pitch, -1 * Data->gyro_azimuth);
+		//ControlableRocket->RotateAR(FRotator(Data->gyro_roll + 90, -1 * Data->gyro_pitch + 90, -1 * Data->gyro_azimuth + 90));
+		//UE_LOG(LogCameraPawn, Display, TEXT("%d %d %d"), (int32)Data->gyro_roll, (int32)Data->gyro_azimuth, (int32)Data->gyro_pitch);
+		UE_LOG(LogCameraPawn, Display, TEXT("%d %d %d"), Data->accel_x, Data->accel_y, Data->accel_z);
+		MoveX(20 * Data->accel_x  / (2 * 24 * 24));
+		MoveY(20 * Data->accel_y  / (2 * 24 * 24));
+		MoveZ(20 * Data->accel_z  / (2 * 24 * 24));
+	}
 }
 
 void ACameraControlerPawn::StopReceiveSocket()

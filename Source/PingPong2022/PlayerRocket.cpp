@@ -3,6 +3,7 @@
 
 #include "PlayerRocket.h"
 #include "CameraControlerPawn.h"
+#include "Kismet/KismetMathLibrary.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPlayerRocket, All, All)
 
@@ -14,7 +15,16 @@ APlayerRocket::APlayerRocket()
 
 	BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>("BaseRocketMesh");
 	SetRootComponent(BaseMesh);
-	SetActorEnableCollision(true);
+	MarkX = CreateDefaultSubobject<UStaticMeshComponent>("MarkX");
+	MarkX->AttachTo(BaseMesh);
+	MarkX->AddWorldOffset(FVector::XAxisVector * 250);
+	MarkY = CreateDefaultSubobject<UStaticMeshComponent>("MarkY");
+	MarkY->AttachTo(BaseMesh);
+	MarkY->AddWorldOffset(FVector::YAxisVector * 250);
+	MarkZ = CreateDefaultSubobject<UStaticMeshComponent>("MarkZ");
+	MarkZ->AttachTo(BaseMesh);
+	MarkZ->AddWorldOffset(FVector::ZAxisVector * 250);
+	SetActorEnableCollision(true);	
 }
 
 // Called when the game starts or when spawned
@@ -62,7 +72,11 @@ void APlayerRocket::Rotate(FRotator DeltaRotation)
 
 void APlayerRocket::SetRotation(FRotator Rotation)
 {
-	SetActorRotation(Rotation);
+	if (Rotation != FRotator::ZeroRotator) {
+		FRotator Offset = Rotation;
+		FQuat QuatRotation = FQuat(Offset);
+		SetActorRotation(QuatRotation);
+	}
 }
 
 void APlayerRocket::SetArmRotation(float Degrees)
@@ -96,10 +110,23 @@ void APlayerRocket::SendControllerHittingResult(int32 Result)
 
 void APlayerRocket::RotateAR(FRotator Rotation)
 {
-	FQuat XRotation = FQuat(1, 0, 0, Rotation.GetComponentForAxis(EAxis::X));
-	FQuat YRotation = FQuat(0, 1, 0, Rotation.GetComponentForAxis(EAxis::Y));
-	FQuat ZRotation = FQuat(0, 0, 1, Rotation.GetComponentForAxis(EAxis::Z));
-	SetActorRotation(FRotator(XRotation * YRotation * ZRotation));
+	/*NOT DONE*/
+	if (Rotation != FRotator::ZeroRotator) {
+		if (FirstConnect) {
+			FRotator XRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::XAxisVector, Rotation.Yaw);
+			FRotator YRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::YAxisVector, Rotation.Roll);
+			FRotator ZRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::ZAxisVector, Rotation.Pitch);
+			BaseRotation = XRotation + ZRotation + YRotation;
+			FirstConnect = false;
+			UE_LOG(LogPlayerRocket, Display, TEXT("%d %d %d"), (int32)Rotation.Roll, (int32)Rotation.Yaw, (int32)Rotation.Pitch);
+		}
+		else
+		{
+			FRotator XRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::XAxisVector, Rotation.Yaw) * -1;
+			FRotator YRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::YAxisVector, Rotation.Roll);
+			FRotator ZRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::ZAxisVector, Rotation.Pitch);
+
+			SetActorRotation(XRotation + ZRotation + YRotation - BaseRotation);
+		}
+	}
 }
-
-
