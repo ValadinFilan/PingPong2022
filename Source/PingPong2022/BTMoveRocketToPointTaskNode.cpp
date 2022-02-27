@@ -7,7 +7,6 @@
 #include "BehaviorTree/BlackboardComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMoveRocketToPointTask, All, All)
-//UE_LOG(LogMoveRocketToPointTask, Display, TEXT("Controller"));
 
 EBTNodeResult::Type UBTMoveRocketToPointTaskNode::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -24,8 +23,8 @@ EBTNodeResult::Type UBTMoveRocketToPointTaskNode::ExecuteTask(UBehaviorTreeCompo
 					Pawn->Move(Vector);
 					ABallActor* Ball = Cast<ABallActor>(Blackboard->GetValueAsObject(BallKeySelector.SelectedKeyName));
 					if (Ball) {
-						if (((Ball->GetActorLocation() - Pawn->GetControlableRocket()->GetActorLocation()).Size() < 50)) {
-							//GetHittingRotator(OwnerComp, Ball, Pawn);
+						if (((Ball->GetActorLocation() - Pawn->GetControlableRocket()->GetActorLocation()).Size() < 100)) {
+							//GetHittingRotator(OwnerComp, Ball, Pawn); 
 							Pawn->HittingRotate();
 						}
 					}

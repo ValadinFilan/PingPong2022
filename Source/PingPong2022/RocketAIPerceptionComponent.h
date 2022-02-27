@@ -8,7 +8,7 @@
 #include "RocketAIPerceptionComponent.generated.h"
 
 /**
- * 
+ * Ball vision perception component
  */
 UCLASS()
 class PINGPONG2022_API URocketAIPerceptionComponent : public UAIPerceptionComponent

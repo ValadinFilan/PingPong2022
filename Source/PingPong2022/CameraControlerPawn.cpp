@@ -137,14 +137,14 @@ void ACameraControlerPawn::SetARRotation(float AmountX, float AmountY, float Amo
 {
 	FRotator Rotation = FRotator(AmountX, AmountY, AmountZ);
 	if (ControlableRocket) {
-		ControlableRocket->RotateAR(/*GetActorRotation() + */Rotation);
+		ControlableRocket->RotateAR(GetActorRotation() + Rotation);
 	}
 }
 
 void ACameraControlerPawn::SetRotation(FRotator Rotator)
 {
 	if (ControlableRocket) {
-		ControlableRocket->SetRotation(/*GetActorRotation() +*/Rotator);
+		ControlableRocket->SetRotation(GetActorRotation() +Rotator);
 	}
 }
 
@@ -175,8 +175,9 @@ void ACameraControlerPawn::RotateZ(float Amount)
 void ACameraControlerPawn::HittingRotate()
 {
 	FVector RocketPosition = ControlableRocket->GetActorLocation();
-	FRotator RocketRotation = FRotator(0, FMath::RadiansToDegrees(FMath::Atan((RocketPosition.Y - HittingPoint.Y) / (RocketPosition.X - HittingPoint.X))), 0) + AddedRotation;
+	FRotator RocketRotation = FRotator(15, FMath::RadiansToDegrees(FMath::Atan((RocketPosition.Y - HittingPoint.Y) / (RocketPosition.X - HittingPoint.X))), 0) + AddedRotation;
 	ControlableRocket->SetRotation(GetActorRotation() + RocketRotation);
+	ControlableRocket->RocketForce = 0.3f;
 }
 
 void ACameraControlerPawn::ReceiveHittingResult(int32 Result)
@@ -232,7 +233,6 @@ void ACameraControlerPawn::ReceiveData(const FArrayReaderPtr& DataPtr, const FIP
 	if (DataPtr.Get()) {
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Result);
 		if (FJsonSerializer::Deserialize(Reader, MyJson)) {
-			//UE_LOG(LogCameraPawn, Display, TEXT("%f, %f, %f"), MyJson->GetNumberField(TEXT("gyro_azimuth")), MyJson->GetNumberField(TEXT("gyro_pitch")), MyJson->GetNumberField(TEXT("gyro_roll")));
 			RocketData.accel_freq = MyJson->GetNumberField(TEXT("accel_freq"));
 			RocketData.accel_x = MyJson->GetNumberField(TEXT("accel_x"));
 			RocketData.accel_y = MyJson->GetNumberField(TEXT("accel_y"));
@@ -254,15 +254,7 @@ void ACameraControlerPawn::ReceiveData(const FArrayReaderPtr& DataPtr, const FIP
 void ACameraControlerPawn::UpdateRocket(const FSensorData* Data)
 {
 	if (!MouseMode) {
-		//SetRotation(-1 * Data->gyro_pitch - 90, 0, 0);
-		//SetRotation(Data->gyro_roll, Data->gyro_azimuth, Data->gyro_pitch);
-		//SetRotation(-1 * Data->gyro_pitch - 90, Data->gyro_azimuth - 90, -1 * Data->gyro_roll);
-		//SetRotation(0, 0, -1 * Data->gyro_roll);
-		//SetRotation(Data->gyro_roll, Data->gyro_pitch, Data->gyro_azimuth);
-		//SetRotation(Data->gyro_roll + 90, -1 * Data->gyro_pitch, -1 * Data->gyro_azimuth);
-		//ControlableRocket->RotateAR(FRotator(Data->gyro_roll + 90, -1 * Data->gyro_pitch + 90, -1 * Data->gyro_azimuth + 90));
-		//UE_LOG(LogCameraPawn, Display, TEXT("%d %d %d"), (int32)Data->gyro_roll, (int32)Data->gyro_azimuth, (int32)Data->gyro_pitch);
-		UE_LOG(LogCameraPawn, Display, TEXT("%d %d %d"), Data->accel_x, Data->accel_y, Data->accel_z);
+		SetARRotation(Data->gyro_roll, Data->gyro_azimuth, Data->gyro_pitch);
 		MoveX(20 * Data->accel_x  / (2 * 24 * 24));
 		MoveY(20 * Data->accel_y  / (2 * 24 * 24));
 		MoveZ(20 * Data->accel_z  / (2 * 24 * 24));

@@ -7,17 +7,19 @@
 #include "BTFindBallService.generated.h"
 
 /**
- * 
+ * Service for finding ball
  */
 UCLASS()
 class PINGPONG2022_API UBTFindBallService : public UBTService
 {
 	GENERATED_BODY()
 public:
+	UBTFindBallService();
+
+	//Celector key for found ball
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	FBlackboardKeySelector BallActorKey;
 
-	UBTFindBallService();
-
+	//Finding ball finction
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 };

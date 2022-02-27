@@ -118,7 +118,7 @@ void AAITrainingGameModeBase::IndexateResult(int32 Result, int32 n)
     else {
         QVector[n] -= (Result - 100);
     }
-    UE_LOG(LogAITrainingGameMode, Display, TEXT("Indexate result %d: %d"), n, Result)
+    //UE_LOG(LogAITrainingGameMode, Display, TEXT("Indexate result %d: %d"), n, Result)
 }
 
 void AAITrainingGameModeBase::OnTimerFired()

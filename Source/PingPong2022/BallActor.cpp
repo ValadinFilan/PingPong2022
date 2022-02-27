@@ -31,7 +31,10 @@ void ABallActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (GravityEnabled) {
+		//Calculating gravity
 		VelocityVector += FVector::ZAxisVector * -10 * BallMass / 24;
+		
+		//Calculating air resistance
 		VelocityVector += -1 * VelocityVector.GetSafeNormal() * VelocityVector.Size() * 3.1415926535 / BallMass * Radius * Radius * EnviromentDensity * Enviroment / 2;
 	}
 	AddActorWorldOffset(VelocityVector, true);
@@ -44,7 +47,7 @@ void ABallActor::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimit
 		if (!GravityEnabled) {
 			GravityEnabled = true;
 		}
-		VelocityVector += Hit.ImpactNormal * Rocket->RocketForce * 0.2f;
+		VelocityVector += Hit.ImpactNormal * Rocket->RocketForce;
 	}
 }
 
