@@ -112,6 +112,7 @@ void APlayerRocket::RotateAR(FRotator Rotation)
 {
 	/*NOT DONE*/
 	if (Rotation != FRotator::ZeroRotator) {
+		/*
 		if (FirstConnect) {
 			FRotator XRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::XAxisVector, Rotation.Yaw);
 			FRotator YRotation = UKismetMathLibrary::RotatorFromAxisAndAngle(FVector::YAxisVector, Rotation.Roll);
@@ -128,5 +129,11 @@ void APlayerRocket::RotateAR(FRotator Rotation)
 
 			SetActorRotation(XRotation + ZRotation + YRotation - BaseRotation);
 		}
+		*/
+		FRotator NewRotation = FRotator(-1 * Rotation.Roll - 90, 0, Rotation.Yaw - 90);
+		//FRotator NewRotation = FRotator(-1 * Rotation.Roll - 90, Rotation.Roll, Rotation.Yaw - 90);
+
+		//SetActorRotation(XRotation + ZRotation + YRotation - BaseRotation);
+		SetActorRotation(NewRotation);
 	}
 }

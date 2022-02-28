@@ -255,9 +255,9 @@ void ACameraControlerPawn::UpdateRocket(const FSensorData* Data)
 {
 	if (!MouseMode) {
 		SetARRotation(Data->gyro_roll, Data->gyro_azimuth, Data->gyro_pitch);
-		MoveX(20 * Data->accel_x  / (2 * 24 * 24));
-		MoveY(20 * Data->accel_y  / (2 * 24 * 24));
-		MoveZ(20 * Data->accel_z  / (2 * 24 * 24));
+		//MoveX(20 * Data->accel_x  / (2 * 24 * 24));
+		//MoveY(20 * Data->accel_y  / (2 * 24 * 24));
+		//MoveZ(20 * Data->accel_z  / (2 * 24 * 24));
 	}
 }
 
